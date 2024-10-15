@@ -1,0 +1,96 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  background-color: #f9f9f9;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+h2 {
+  text-align: center;
+  color: var(--color-secondary);
+  margin-bottom: var(--space-md);
+  font-size: var(--size-xl);
+}
+
+h3 {
+  color: var(--color-primary);
+  margin-top: 0;
+  font-size: var(--size-lg);
+}
+
+p {
+  color: var(--color-danger);
+  text-align: center;
+  font-size: var(--size-md);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-md);
+}
+
+th {
+  background-color: var(--color-primary);
+  color: white;
+  padding: var(--space-sm);
+  text-align: left;
+  font-size: var(--size-sm);
+}
+
+td {
+  border: 1px solid #dddddd;
+  padding: var(--space-xs);
+  text-align: left;
+  font-size: var(--size-sm);
+}
+
+tr:hover {
+  background-color: #f1f1f1;
+}
+
+.add-button {
+  background-color: var(--color-success);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  font-size: var(--size-md);
+  margin: var(--space-xs) 0;
+  display: block;
+  width: 100%;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: var(--color-success-hover);
+}
+
+form {
+  margin-top: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid #dddddd;
+  border-radius: var(--border-radius);
+  background-color: var(--color-light);
+}
+
+input[type="text"],
+input[type="password"],
+select {
+  width: calc(100% - var(--space-md));
+  padding: var(--space-xs);
+  margin: var(--space-xs) 0;
+  border: 1px solid var(--color-dark) var(--color-dark);
+  border-radius: var(--border-radius);
+  font-size: var(--size-md);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+select:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}

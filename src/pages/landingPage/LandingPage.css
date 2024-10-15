@@ -1,0 +1,52 @@
+/* Contenedor para centrar vertical y horizontalmente */
+.landing-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-image: url("../../assets/onboarding.jpg");
+  background-size: cover; /* La imagen cubre todo el contenedor */
+  background-position: center; /* Centra la imagen */
+  background-repeat: no-repeat;
+}
+
+/* Contenedor principal de la Landing Page */
+.landing-container {
+  text-align: center;
+  padding: var(--space-lg);
+  background-color: #f9f9f9;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-primary);
+}
+
+/* Estilo del título */
+.landing-container h1 {
+  color: var(--color-primary);
+  margin-bottom: var(--space-md);
+  font-size: var(--size-xxl);
+}
+
+/* Estilo del párrafo */
+.landing-container p {
+  color: var(--color-secondary);
+  margin-bottom: var(--space-md);
+  font-size: var(--size-md);
+}
+
+/* Estilo de los botones */
+.landing-container button {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--size-md);
+  cursor: pointer;
+  margin: var(--space-xs);
+  transition: background-color 0.3s;
+}
+
+.landing-container button:hover {
+  background-color: var(--color-primary-hover);
+}

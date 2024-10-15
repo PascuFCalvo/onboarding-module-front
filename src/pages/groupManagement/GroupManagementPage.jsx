@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { getGruposBySociedad, createGrupo, getDepartamentos } from "../api"; // Asegúrate de importar correctamente
-
+import { getGruposBySociedad, createGrupo, getDepartamentos } from "../../api";
+import "./GroupManagementPage.css";
 const GroupManagement = () => {
   const [groups, setGroups] = useState([]);
   const [error, setError] = useState("");
@@ -125,7 +125,7 @@ const GroupManagement = () => {
         </tbody>
       </table>
 
-      <button onClick={() => setShowForm(!showForm)}>
+      <button className="add-button" onClick={() => setShowForm(!showForm)}>
         {showForm ? "Cancelar" : "Agregar Grupo"}
       </button>
 

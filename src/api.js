@@ -44,7 +44,24 @@ export const createGrupo = (grupo) => axios.post("/grupos", grupo);
 export const updateGrupo = (id, grupo) => axios.put(`/grupos/${id}`, grupo);
 export const deleteGrupo = (id) => axios.delete(`/grupos/${id}`);
 
-
 //notificaciones
 export const getNotificacionesBySociedad = (sociedadId) =>
   axios.get(`/notificaciones/sociedad/${sociedadId}`);
+
+// Documentación
+export const uploadDocumentacion = (documentacion) =>
+  axios.post("/documentacion", documentacion);
+export const getDocumentosPorSociedad = (sociedadId) =>
+  axios.get(`/documentacion/sociedad/${sociedadId}`);
+export const getDocumentosPorUsuarioYsociedad = (sociedadId) =>
+  axios.get(`/documentacion/sociedad/${sociedadId}/documentacionUsuarios`);
+export const getDocumentacionPorSociedad = (sociedadId) =>
+  axios.get(`/documentacion/sociedad/${sociedadId}/documentacionSociedad`);
+export const getDocumentosPorGrupoYsociedad = (sociedadId) =>
+  axios.get(`/documentacion/sociedad/${sociedadId}/documentacionGrupos`);
+
+export const getDocumentosPorDepartamentoYsociedad = (sociedadId) =>
+  axios.get(`/documentacion/sociedad/${sociedadId}/documentacionDepartamentos`);
+
+//ssologin
+export const ssologin = (usuario) => axios.post("/ssologin", usuario);

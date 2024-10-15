@@ -1,0 +1,55 @@
+.welcome-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--color-secondary);
+  background-color: #f9f9f9;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm); /* Sombra pequeña */
+  font-family: var(--font-primary);
+}
+
+.welcome-container h1 {
+  font-size: var(--size-xxxl); /* Tamaño grande */
+  margin-bottom: var(--space-sm);
+  color: var(--color-primary);
+}
+
+.welcome-container h2 {
+  font-size: var(--size-xxl); /* Tamaño grande */
+  margin-top: var(--space-md);
+  color: var(--color-secondary);
+}
+
+.welcome-container p {
+  font-size: var(--size-md);
+  line-height: 1.6;
+  margin-bottom: var(--space-sm);
+  color: var(--color-secondary);
+}
+
+.welcome-container ul {
+  list-style-type: none;
+  padding: 0;
+  text-align: left;
+  font-size: var(--size-md);
+}
+
+.welcome-container li {
+  margin: var(--space-xs) 0;
+  background: #e9f5ff;
+  padding: var(--space-sm);
+  border-radius: var(--border-radius);
+}
+
+.welcome-container li::before {
+  content: "✔️ ";
+  color: var(--color-success); /* Color verde de éxito */
+}
+
+.welcome-container p:last-of-type {
+  margin-top: var(--space-lg);
+  font-style: italic;
+  color: #555;
+}

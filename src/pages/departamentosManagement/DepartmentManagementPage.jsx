@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getDepartamentos, createDepartamento } from "../api"; // Asegúrate de importar correctamente
+import { getDepartamentos, createDepartamento } from "../../api";
+import "./DepartmentManagementPage.css";
 
 const DepartmentManagement = () => {
   const [departments, setDepartments] = useState([]);
@@ -89,7 +90,7 @@ const DepartmentManagement = () => {
         </tbody>
       </table>
 
-      <button onClick={() => setShowForm(!showForm)}>
+      <button className="add-button" onClick={() => setShowForm(!showForm)}>
         {showForm ? "Cancelar" : "Agregar Departamento"}
       </button>
 

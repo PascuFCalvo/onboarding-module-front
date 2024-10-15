@@ -1,0 +1,58 @@
+.container {
+  max-width: 800px;
+  margin: var(--space-xxl) auto;
+  padding: var(--space-lg);
+  background-color: #f9f9f9;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+h2 {
+  text-align: center;
+  color: var(--color-secondary);
+  margin-bottom: var(--space-md);
+  font-size: var(--size-xl);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-md);
+}
+
+th,
+td {
+  padding: var(--space-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--color-dark);
+}
+
+th {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+tr td:nth-child(1) {
+  font-weight: bold;
+}
+
+/* Estilos para diferentes tipos de notificaciones */
+.notification-info {
+  background-color: #e7f3fe;
+  color: var(--color-info);
+}
+
+.notification-warning {
+  background-color: var(--color-light) 3cd;
+  color: var(--color-warning);
+}
+
+.notification-danger {
+  background-color: #f8d7da;
+  color: var(--color-danger);
+}
+
+.notification-success {
+  background-color: #d4edda;
+  color: var(--color-success);
+}

@@ -1,0 +1,75 @@
+/* Contenedor principal del Login */
+
+.login-container {
+  width: 500px;
+  margin: auto;
+  padding: var(--space-lg);
+  background-color: var(--color-light);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  font-family: var(--font-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Contenedor para centrar vertical y horizontalmente */
+.login-wrapper {
+  background-color: var(--color-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Asegura que ocupe toda la altura de la pantalla */
+}
+
+/* Encabezado del Login */
+h2 {
+  color: var(--color-primary);
+  margin-bottom: var(--space-md);
+  font-size: var(--size-xl);
+}
+
+/* Estilo de los mensajes de error */
+p {
+  color: var(--color-danger);
+  margin-bottom: var(--space-sm);
+  font-size: var(--size-md);
+}
+
+/* Estilo de los campos de entrada */
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: var(--space-xs);
+  margin: var(--space-xs) 0;
+  border: 1px solid var(--color-dark);
+  border-radius: var(--border-radius);
+  font-size: var(--size-md);
+}
+
+/* Borde al enfocar en los campos de entrada */
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+/* Botón de Iniciar Sesión */
+button {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  font-size: var(--size-md);
+  margin-top: var(--space-md);
+  transition: background-color 0.3s;
+  width: 100%;
+}
+
+/* Efecto Hover en el Botón */
+button:hover {
+  background-color: var(--color-primary-hover);
+}

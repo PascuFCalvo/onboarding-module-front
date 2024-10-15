@@ -1,0 +1,36 @@
+.manager-page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: var(--font-primary);
+  background-color: var(--color-light); /* Fondo general, se puede ajustar */
+}
+
+.manager-main {
+  display: flex;
+  flex: 1;
+}
+
+.manager-sidebar {
+  background-color: var(--color-secondary);
+  color: var(--color-light);
+  height: 100dvh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-md);
+  overflow: hidden;
+  box-shadow: var(--shadow); /* Añadir sombra */
+  border-radius: var(--border-radius); /* Bordes redondeados */
+  font-size: var(--size-sm); /* Tamaño de fuente secundario */
+}
+
+.manager-content {
+  flex: 1;
+  padding: var(--space-xl);
+  overflow-y: auto;
+  font-family: var(--font-secondary);
+  font-size: var(--size-md); /* Tamaño de fuente principal */
+}

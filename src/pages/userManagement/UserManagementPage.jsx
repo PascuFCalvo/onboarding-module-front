@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getRoles, getUsuarios, createUsuario } from "../api"; // Asegúrate de importar correctamente
+import { getRoles, getUsuarios, createUsuario } from "../../api";
+import "./UserManagementPage.css";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]); // Estado para almacenar la lista de usuarios
@@ -32,41 +33,43 @@ const UserManagement = () => {
     fetchRoles(); // Llama a la función para obtener roles
   }, []);
 
-  // Efecto para obtener usuarios
+  // Efecto para obtener sociedadId y marcaId desde el token
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Token no encontrado");
-          return;
-        }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Token no encontrado");
+      return;
+    }
 
-        // Decodifica el token para obtener el ID de la sociedad y la marca
-        const decodedToken = JSON.parse(atob(token.split(".")[1]));
-        const sociedadId = decodedToken.sociedadId;
-        const marcaId = decodedToken.marcaId; // Asegúrate de que el token incluya este campo
-        setSociedadId(sociedadId);
-        setMarcaId(marcaId);
+    const decodedToken = JSON.parse(atob(token.split(".")[1]));
+    const sociedadIdFromToken = decodedToken.sociedadId;
+    const marcaIdFromToken = decodedToken.marcaId; // Asegúrate de que el token incluya este campo
 
-        if (!sociedadId) {
-          setError("sociedadId no encontrado en el token");
-          return;
-        }
-        if (!marcaId) {
-          setError("marcaId no encontrado en el token");
-          return;
-        }
+    setSociedadId(sociedadIdFromToken);
+    setMarcaId(marcaIdFromToken);
 
-        const response = await getUsuarios(sociedadId); // Llama a getUsuarios con el ID de sociedad
-        setUsers(response.data);
-      } catch (error) {
-        setError(error.message);
-      }
-    };
+    if (!sociedadIdFromToken) {
+      setError("sociedadId no encontrado en el token");
+      return;
+    }
+    if (!marcaIdFromToken) {
+      setError("marcaId no encontrado en el token");
+      return;
+    }
 
-    fetchUsers();
-  }, []); // Dependencia vacía para ejecutar al montar el componente
+    // Una vez que tenemos sociedadId, obtenemos los usuarios
+    fetchUsers(sociedadIdFromToken);
+  }, []);
+
+  // Función para obtener usuarios
+  const fetchUsers = async (sociedadId) => {
+    try {
+      const response = await getUsuarios(sociedadId); // Llama a getUsuarios con el ID de sociedad
+      setUsers(response.data);
+    } catch (error) {
+      setError(error.message);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -76,7 +79,12 @@ const UserManagement = () => {
   const handleAddUser = async (e) => {
     e.preventDefault(); // Evita la recarga de la página
     try {
-      // Asignar sociedad_id y marca_id desde el estado
+      // Asegúrate de que sociedadId y marcaId estén definidos
+      if (!sociedadId || !marcaId) {
+        setError("sociedadId o marcaId no están disponibles.");
+        return;
+      }
+
       const usuarioData = {
         ...newUser,
         sociedad_id: sociedadId,
@@ -94,9 +102,9 @@ const UserManagement = () => {
         rol_id: "",
       });
       setShowForm(false); // Ocultar el formulario después de crear el usuario
+
       // Actualiza la lista de usuarios
-      const updatedUsers = await getUsuarios(sociedadId);
-      setUsers(updatedUsers.data);
+      fetchUsers(sociedadId); // Llama a fetchUsers para actualizar la lista
     } catch (error) {
       console.error("Error al crear usuario:", error);
       setError("No se pudo crear el usuario");
@@ -125,7 +133,7 @@ const UserManagement = () => {
               <td>{user.nombre}</td>
               <td>{user.apellido}</td>
               <td>{user.email}</td>
-              <td>{user.roles.join(", ")}</td> {/* Muestra los roles */}
+              <td>{user.roles.join(", ")}</td>
               <td>{user.telefono}</td>
               <td>{user.direccion}</td>
             </tr>
@@ -133,7 +141,7 @@ const UserManagement = () => {
         </tbody>
       </table>
 
-      <button onClick={() => setShowForm(!showForm)}>
+      <button className="add-button" onClick={() => setShowForm(!showForm)}>
         {showForm ? "Cancelar" : "Agregar Usuario"}
       </button>
 

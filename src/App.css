@@ -1,42 +1,71 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* crear variables de color generales para todo el documento */
+
+:root {
+  --color-primary: #05bfad;
+  --color-primary-hover: #048a84;
+  --color-secondary: #006791;
+  --color-secondary-hover: #004b6c;
+  --color-success: #28a745;
+  --color-success-hover: #1e7d32;
+  --color-danger: #dc3545;
+  --color-danger-hover: #a52733;
+  --color-warning: #ffc107;
+  --color-warning-hover: #cc9a06;
+  --color-info: #17a2b8;
+  --color-info-hover: #116a78;
+  --color-light: #f8f9fa;
+  --color-light-hover: #e9ecef;
+  --color-dark: #343a40;
+  --color-dark-hover: #23272b;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/*variable de fuentes generales para todo el documento */
+
+:root {
+  --font-primary: "Roboto", sans-serif;
+  --font-secondary: "Open Sans", sans-serif;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/*variables de tamaño generales para todo el documento */
+
+:root {
+  --size-xxs: 0.5rem;
+  --size-xs: 0.75rem;
+  --size-sm: 0.875rem;
+  --size-md: 1rem;
+  --size-lg: 1.25rem;
+  --size-xl: 1.5rem;
+  --size-xxl: 2rem;
+  --size-xxxl: 3rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/*variables de espaciado generales para todo el documento */
+
+:root {
+  --space-xxs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-xxl: 3rem;
 }
 
-.card {
-  padding: 2em;
+/*variables de borde generales para todo el documento */
+
+:root {
+  --border-radius: 0.25rem;
 }
 
-.read-the-docs {
-  color: #888;
+/*variables de sombra generales para todo el documento */
+
+:root {
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+a {
+  text-decoration: none;
+  color: var(--color-light);
 }

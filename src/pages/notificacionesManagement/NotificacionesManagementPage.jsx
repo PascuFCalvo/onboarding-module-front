@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { getNotificacionesBySociedad } from "../api"; // Asegúrate de que la función esté correctamente importada
+import { getNotificacionesBySociedad } from "../../api"; 
+// Asegúrate de que la función esté correctamente importada
+import "./NotificacionesManagementPage.css"
 
 const NotificationManagement = () => {
   const [notificaciones, setNotificaciones] = useState([]);
