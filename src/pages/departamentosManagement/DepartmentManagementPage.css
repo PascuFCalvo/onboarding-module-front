@@ -55,7 +55,7 @@ tr:hover {
   font-size: var(--size-md);
   margin: var(--space-xs) 0;
   display: block;
-  width: 100%;
+  width: 30%;
   transition: background-color 0.3s;
 }
 

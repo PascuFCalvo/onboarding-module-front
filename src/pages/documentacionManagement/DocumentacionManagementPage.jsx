@@ -10,6 +10,8 @@ import {
   getDocumentosPorDepartamentoYsociedad,
 } from "../../api";
 import axios from "axios";
+import SignatureModal from "../../components/SignDocument";
+import { createSignature } from "../../api";
 
 const DocumentacionManagementPage = () => {
   const [documentacion, setDocumentacion] = useState(null);
@@ -31,6 +33,7 @@ const DocumentacionManagementPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [groupDocuments, setGroupDocuments] = useState([]);
   const [departmentDocuments, setDepartmentDocuments] = useState([]);
+  const [documentName, setDocumentName] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -151,6 +154,7 @@ const DocumentacionManagementPage = () => {
       setGroupDocuments;
     }
   };
+
   const fetchDepartmentsDocuments = async () => {
     try {
       const sociedadId = JSON.parse(
@@ -254,23 +258,32 @@ const DocumentacionManagementPage = () => {
   const openModal = (url) => {
     setPreviewUrl(url);
     setIsModalOpen(true);
+    setDocumentName(url.split("/").pop());
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setPreviewUrl(null);
+    setDocumentName("");
   };
 
-  const handleSignDocument = async () => {
+  const handleSignDocument = async (signatureInfo) => {
     try {
-      await axios.post("http://localhost:3000/documentacion/sign", {
-        documentUrl: previewUrl,
-      });
-      alert("Documento firmado con éxito.");
-      fetchSociedadDocuments();
-      fetchUserDocuments();
+      const response = await createSignature(signatureInfo);
+      const { documento_id } = response.data;
+
+      // Actualizar el estado de `firma` en `userDocuments`
+      setUserDocuments((prevDocuments) =>
+        prevDocuments.map((doc) =>
+          doc.documento.id === documento_id
+            ? { ...doc, firma: true } // Usar 'firma' en lugar de 'is_firmado'
+            : doc
+        )
+      );
+
+      closeModal();
     } catch (error) {
-      setError("Error al firmar el documento: " + error.message);
+      console.error("Error al registrar la firma:", error);
     }
   };
 
@@ -381,13 +394,12 @@ const DocumentacionManagementPage = () => {
                 <th>Nombre del Documento</th>
                 <th>Descripción</th>
                 <th>Fecha de Subida</th>
-                <th>Firmado</th>
                 <th>URL</th>
               </tr>
             </thead>
             <tbody>
               {sociedadDocuments.map((doc) => (
-                <tr key={doc?.documentacion?.id}>
+                <tr key={doc?.id}>
                   <td>{doc?.documentacion?.nombre || "No disponible"}</td>
                   <td>{doc?.documentacion?.descripcion || "No disponible"}</td>
                   <td>
@@ -397,7 +409,6 @@ const DocumentacionManagementPage = () => {
                         ).toLocaleDateString()
                       : "No disponible"}
                   </td>
-                  <td>{doc?.documentacion?.is_firmado ? "Sí" : "No"}</td>
                   <td>
                     <button
                       className="table-button"
@@ -431,13 +442,12 @@ const DocumentacionManagementPage = () => {
                 <th>Nombre del Documento</th>
                 <th>Descripción</th>
                 <th>Fecha de Subida</th>
-                <th>Firmado</th>
                 <th>URL</th>
               </tr>
             </thead>
             <tbody>
               {groupDocuments.map((doc) => (
-                <tr key={doc?.documento?.id}>
+                <tr key={doc?.id}>
                   <td>{doc?.grupo?.nombre || "No disponible"}</td>
                   <td>{doc?.grupo?.departamento?.nombre || "No disponible"}</td>
                   <td>{doc?.documento?.sociedad?.nombre || "No disponible"}</td>
@@ -450,7 +460,6 @@ const DocumentacionManagementPage = () => {
                         ).toLocaleDateString()
                       : "No disponible"}
                   </td>
-                  <td>{doc?.documento?.is_firmado ? "Sí" : "No"}</td>
                   <td>
                     <button
                       className="table-button"
@@ -482,13 +491,12 @@ const DocumentacionManagementPage = () => {
                 <th>Nombre del Documento</th>
                 <th>Descripción</th>
                 <th>Fecha de Subida</th>
-                <th>Firmado</th>
                 <th>URL</th>
               </tr>
             </thead>
             <tbody>
               {departmentDocuments.map((doc) => (
-                <tr key={doc?.documento?.id}>
+                <tr key={doc?.id}>
                   <td>{doc?.departamento?.nombre || "No disponible"}</td>
                   <td>
                     {doc?.departamento?.grupos
@@ -507,7 +515,6 @@ const DocumentacionManagementPage = () => {
                         ).toLocaleDateString()
                       : "No disponible"}
                   </td>
-                  <td>{doc?.documento?.is_firmado ? "Sí" : "No"}</td>
                   <td>
                     <button
                       className="table-button"
@@ -528,68 +535,61 @@ const DocumentacionManagementPage = () => {
       </div>
 
       <div className="tables-container">
-        <h2>Documentos Asignados a Usuarios</h2>
-        {userDocuments.length === 0 ? (
-          <p>No hay documentos asignados a ningún usuario.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Nombre del Usuario</th>
-                <th>Apellido</th>
-                <th>Nombre del Documento</th>
-                <th>Descripción</th>
-                <th>Fecha de Subida</th>
-                <th>Firmado</th>
-                <th>URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {userDocuments.map((doc) => (
-                <tr key={doc?.id}>
-                  <td>{doc?.usuario?.nombre || "No disponible"}</td>
-                  <td>{doc?.usuario?.apellido || "No disponible"}</td>
-                  <td>{doc?.documento?.nombre || "No disponible"}</td>
-                  <td>{doc?.documento?.descripcion || "No disponible"}</td>
-                  <td>
-                    {doc?.documento?.fecha_subida
-                      ? new Date(
-                          doc.documento.fecha_subida
-                        ).toLocaleDateString()
-                      : "No disponible"}
-                  </td>
-                  <td>{doc?.documento?.is_firmado ? "Sí" : "No"}</td>
-                  <td>
-                    <button
-                      className="table-button"
-                      onClick={() =>
-                        openModal(
-                          `http://localhost:3000/${doc?.documento?.url}`
-                        )
-                      }
-                    >
-                      Ver Documento
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+  <h2>Documentos Asignados a Usuarios</h2>
+  {userDocuments.length === 0 ? (
+    <p>No hay documentos asignados a ningún usuario.</p>
+  ) : (
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre del Usuario</th>
+          <th>Apellido</th>
+          <th>Nombre del Documento</th>
+          <th>Descripción</th>
+          <th>Fecha de Subida</th>
+          <th>Firmado</th>
+          <th>URL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {userDocuments.map((doc) => (
+          <tr key={doc?.id}>
+            <td>{doc?.usuario?.nombre || "No disponible"}</td>
+            <td>{doc?.usuario?.apellido || "No disponible"}</td>
+            <td>{doc?.documento?.nombre || "No disponible"}</td>
+            <td>{doc?.documento?.descripcion || "No disponible"}</td>
+            <td>
+              {doc?.documento?.fecha_subida
+                ? new Date(doc.documento.fecha_subida).toLocaleDateString()
+                : "No disponible"}
+            </td>
+            <td style={{ color: doc?.firma ? "green" : "red" }}>
+              {doc?.firma ? "Sí" : "No"}
+            </td>
+            <td>
+              <button
+                className="table-button"
+                onClick={() => openModal(`http://localhost:3000/${doc?.documento?.url}`)}
+              >
+                Ver Documento
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button onClick={closeModal}>Cerrar</button>
-            <iframe
-              src={previewUrl}
-              title="Document Preview"
-              width="100%"
-              height="600px"
-            />
-            <button onClick={handleSignDocument}>Firmar Documento</button>
-          </div>
+        <div>
+          <SignatureModal
+            previewUrl={previewUrl}
+            closeModal={closeModal}
+            handleSignDocument={handleSignDocument}
+            documentName={documentName}
+          />
         </div>
       )}
     </>

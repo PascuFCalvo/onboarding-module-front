@@ -65,3 +65,9 @@ export const getDocumentosPorDepartamentoYsociedad = (sociedadId) =>
 
 //ssologin
 export const ssologin = (usuario) => axios.post("/ssologin", usuario);
+
+// Firma de Documentos
+export const createSignature = (signatureData) =>
+  axios.post("/signatures", signatureData);
+export const attachSignatureToDocument = (signatureData) =>
+  axios.post("/signatures/attachSignatureToDocument", signatureData);
