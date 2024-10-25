@@ -10,7 +10,12 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  axios.defaults.baseURL = "http://localhost:3000";
+  let BASEURL = import.meta.env.VITE_BASEURL;
+  if (!BASEURL) {
+    throw new Error("La variable VITE_BASEURL no está definida.");
+  }
+  console.log("Base URL:", BASEURL);
+  axios.defaults.baseURL = BASEURL;
 
   const handleLogin = async () => {
     if (!username || !password) {

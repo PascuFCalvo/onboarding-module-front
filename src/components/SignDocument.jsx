@@ -8,7 +8,8 @@ const SignatureModal = ({
   documentName,
   closeModal,
   handleSignDocument,
-  
+  isSigned,
+  isSignable,
 }) => {
   const canvasRef = useRef(null);
   const [name, setName] = useState("");
@@ -21,14 +22,17 @@ const SignatureModal = ({
   const [isSignHovered, setIsSignHovered] = useState(false);
   const [usuarioId, setUsuarioId] = useState("");
   const [sociedadId, setSociedadId] = useState("");
+  const [isHovered, setIsHovered] = useState(false);
 
   const token = localStorage.getItem("token");
   const userInfo = token ? JSON.parse(atob(token.split(".")[1])) : null;
 
   useEffect(() => {
-    setUsuarioId(userInfo.id);
-    setSociedadId(userInfo.sociedadId);
-  }, []);
+    if (userInfo) {
+      setUsuarioId(userInfo.id);
+      setSociedadId(userInfo.sociedadId);
+    }
+  }, [userInfo]);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -42,9 +46,6 @@ const SignatureModal = ({
           setLocation({ error: "Geolocalización no disponible" });
         }
       );
-    } else {
-      console.warn("Geolocalización no soportada por el navegador");
-      setLocation({ error: "Geolocalización no soportada" });
     }
   }, []);
 
@@ -89,16 +90,20 @@ const SignatureModal = ({
     const canvas = canvasRef.current;
     const signatureData = canvas.toDataURL("image/png");
 
-    const response = await attachSignatureToDocument({
-      name,
-      dni,
-      signatureData,
-      usuarioId,
-      sociedadId,
-      documentName, // Incluye el nombre del documento
-    });
-    console.log("Documento actualizado con la firma", response.data);
-    closeModal(); // Cierra el modal después de adjuntar la firma al documento
+    try {
+      const response = await attachSignatureToDocument({
+        name,
+        dni,
+        signatureData,
+        usuarioId,
+        sociedadId,
+        documentName,
+      });
+      console.log("Documento actualizado con la firma", response.data);
+      closeModal();
+    } catch (error) {
+      console.error("Error al adjuntar la firma:", error);
+    }
   };
 
   const handleSignatureSubmit = () => {
@@ -123,8 +128,8 @@ const SignatureModal = ({
       timestamp: Date.now(),
     };
 
-    handleSignDocument(signatureInfo); // Envía los datos generales al backend
-    handleSignatureInfoToAttachtoDocument(); // Adjunta firma al documento
+    handleSignDocument(signatureInfo);
+    handleSignatureInfoToAttachtoDocument();
   };
 
   const calculateBiometrics = () => {
@@ -143,77 +148,107 @@ const SignatureModal = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={closeModal}>
+    <div
+      style={{
+        position: "relative",
+        "margin-top": "5%",
+      }}
+      className="modal-overlay"
+      onClick={closeModal}
+    >
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button onClick={closeModal}>Cerrar</button>
         <iframe
           src={previewUrl}
           title="Document Preview"
           width="100%"
           height="600px"
         />
-        <div className="signature-section">
-          <input
-            type="text"
-            placeholder="Nombre del Firmante"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="DNI"
-            value={dni}
-            onChange={(e) => setDni(e.target.value)}
-          />
-          <canvas
-            ref={canvasRef}
-            width={300}
-            height={150}
-            style={{ border: "1px solid #000" }}
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-          />
-          <div>
+
+        {!isSigned && isSignable && (
+          <div className="signature-section">
+            <input
+              type="text"
+              placeholder="Nombre del Firmante"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="DNI"
+              value={dni}
+              onChange={(e) => setDni(e.target.value)}
+            />
+            <canvas
+              ref={canvasRef}
+              width={300}
+              height={150}
+              style={{ border: "1px solid #000" }}
+              onMouseDown={startDrawing}
+              onMouseMove={draw}
+              onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}
+            />
+            <div>
+              <button
+                style={{
+                  backgroundColor: isClearHovered
+                    ? "var(--color-danger-hover)"
+                    : "var(--color-danger)",
+                  color: "var(--color-light)",
+                  padding: "0.5rem",
+                  borderRadius: "var(--border-radius)",
+                  cursor: "pointer",
+                  width: "30%",
+                }}
+                onMouseEnter={() => setIsClearHovered(true)}
+                onMouseLeave={() => setIsClearHovered(false)}
+                onClick={handleCanvasClear}
+              >
+                Borrar Firma
+              </button>
+            </div>
+
             <button
               style={{
-                backgroundColor: isClearHovered
-                  ? "var(--color-danger-hover)"
-                  : "var(--color-danger)",
+                backgroundColor: isSignHovered
+                  ? "var(--color-success-hover)"
+                  : "var(--color-success)",
                 color: "var(--color-light)",
                 padding: "0.5rem",
                 borderRadius: "var(--border-radius)",
                 cursor: "pointer",
                 width: "30%",
               }}
-              onMouseEnter={() => setIsClearHovered(true)}
-              onMouseLeave={() => setIsClearHovered(false)}
-              onClick={handleCanvasClear}
+              onMouseEnter={() => setIsSignHovered(true)}
+              onMouseLeave={() => setIsSignHovered(false)}
+              onClick={handleSignatureSubmit}
             >
-              Borrar Firma
+              Firmar
             </button>
           </div>
-
-          <button
-            style={{
-              backgroundColor: isSignHovered
-                ? "var(--color-success-hover)"
-                : "var(--color-success)",
-              color: "var(--color-light)",
-              padding: "0.5rem",
-              borderRadius: "var(--border-radius)",
-              cursor: "pointer",
-              width: "30%",
-            }}
-            onMouseEnter={() => setIsSignHovered(true)}
-            onMouseLeave={() => setIsSignHovered(false)}
-            onClick={handleSignatureSubmit}
-          >
-            Firmar
-          </button>
-        </div>
+        )}
       </div>
+      <button
+        style={{
+          backgroundColor: isHovered
+            ? "var(--color-danger-hover)"
+            : "var(--color-danger)",
+          color: "var(--color-light)",
+          padding: "0.5rem",
+          borderRadius: "var(--border-radius)",
+          cursor: "pointer",
+          width: "4%",
+          alignSelf: "flex-end",
+          position: "absolute",
+          top: "-65px",
+          right: "0",
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={closeModal}
+      >
+        X
+      </button>
     </div>
   );
 };

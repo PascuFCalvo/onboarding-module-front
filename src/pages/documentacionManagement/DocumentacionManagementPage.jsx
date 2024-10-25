@@ -13,6 +13,13 @@ import axios from "axios";
 import SignatureModal from "../../components/SignDocument";
 import { createSignature } from "../../api";
 
+let BASEURL = import.meta.env.VITE_BASEURL;
+if (!BASEURL) {
+  throw new Error("La variable VITE_BASEURL no está definida.");
+}
+console.log("Base URL:", BASEURL);
+axios.defaults.baseURL = BASEURL;
+
 const DocumentacionManagementPage = () => {
   const [documentacion, setDocumentacion] = useState(null);
   const [users, setUsers] = useState([]);
@@ -34,6 +41,15 @@ const DocumentacionManagementPage = () => {
   const [groupDocuments, setGroupDocuments] = useState([]);
   const [departmentDocuments, setDepartmentDocuments] = useState([]);
   const [documentName, setDocumentName] = useState("");
+  const [isHided, setIsHided] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isUserHidden, setIsUserHidden] = useState(false);
+  const [isHoveredUser, setIsHoveredUser] = useState(false);
+  const [isHoveredGroup, setIsHoveredGroup] = useState(false);
+  const [isHoveredDept, setIsHoveredDept] = useState(false);
+  const [isDeptHidden, setIsDeptHidden] = useState(false);
+  const [isGroupHidden, setIsGroupHidden] = useState(false);
+  const [isSignable, setIsSignable] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -180,6 +196,9 @@ const DocumentacionManagementPage = () => {
   const handleFileChange = (e) => {
     setDocumentacion(e.target.files[0]);
   };
+  const isDocumentInUserDocuments = (documentName) => {
+    return userDocuments.some((doc) => doc.documento?.nombre === documentName);
+  };
 
   const handleUserChange = (e) => {
     const { value, checked } = e.target;
@@ -234,7 +253,7 @@ const DocumentacionManagementPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:3000/documentacion/upload", formData, {
+      await axios.post(`${BASEURL}/documentacion/upload`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -255,10 +274,30 @@ const DocumentacionManagementPage = () => {
     }
   };
 
-  const openModal = (url) => {
+  const openModal = (url, assignedUserId) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Token no encontrado");
+      return;
+    }
+
+    const decodedToken = JSON.parse(atob(token.split(".")[1]));
+    const currentUserId = decodedToken.id;
+    const documentName = url.split("/").pop();
+
+    // Verificar si el documento está en userDocuments y si el usuario es el asignado
+    if (
+      isDocumentInUserDocuments(documentName) &&
+      currentUserId === assignedUserId
+    ) {
+      setIsSignable(true); // Permitir firmar solo si el documento está en userDocuments y el usuario coincide
+    } else {
+      setIsSignable(false); // No permitir firmar si no está en userDocuments
+    }
+
     setPreviewUrl(url);
     setIsModalOpen(true);
-    setDocumentName(url.split("/").pop());
+    setDocumentName(documentName);
   };
 
   const closeModal = () => {
@@ -285,6 +324,10 @@ const DocumentacionManagementPage = () => {
     } catch (error) {
       console.error("Error al registrar la firma:", error);
     }
+  };
+
+  const handleHideTable = () => {
+    setIsHided(!isHided);
   };
 
   return (
@@ -382,214 +425,418 @@ const DocumentacionManagementPage = () => {
         )}
         {/* {error && <p style={{ color: "red" }}>{error}</p>} */}
       </div>
-
       <div className="tables-container">
-        <h2>Documentos de la Sociedad</h2>
-        {sociedadDocuments.length === 0 ? (
-          <p>No hay documentos disponibles para esta sociedad.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Nombre del Documento</th>
-                <th>Descripción</th>
-                <th>Fecha de Subida</th>
-                <th>URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sociedadDocuments.map((doc) => (
-                <tr key={doc?.id}>
-                  <td>{doc?.documentacion?.nombre || "No disponible"}</td>
-                  <td>{doc?.documentacion?.descripcion || "No disponible"}</td>
-                  <td>
-                    {doc?.documentacion?.fecha_subida
-                      ? new Date(
-                          doc.documentacion.fecha_subida
-                        ).toLocaleDateString()
-                      : "No disponible"}
-                  </td>
-                  <td>
-                    <button
-                      className="table-button"
-                      onClick={() =>
-                        openModal(
-                          `http://localhost:3000/${doc?.documentacion?.url}`
-                        )
-                      }
-                    >
-                      Ver Documento
-                    </button>
-                  </td>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center", // Centra verticalmente los elementos
+            gap: "10px",
+            textAlign: "flex-end", // Añade espacio entre el título y el botón
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              alignSelf: "flex-end", // Alinea el texto a la izquierda
+            }}
+          >
+            Documentacion general
+          </h2>
+          <button
+            style={{
+              backgroundColor: isHovered
+                ? "var(--color-info-hover)"
+                : "var(--color-info)",
+              color: "var(--color-light)",
+              borderRadius: "var(--border-radius)",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              width: "3rem", // Ajusta el ancho del botón
+            }}
+            onClick={handleHideTable}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {isHided ? "▼" : "▲"}
+          </button>
+        </div>
+        <div
+          style={{
+            maxHeight: isHided ? 0 : "500px",
+            overflow: "hidden",
+            transition: "max-height 0.4s ease",
+          }}
+        >
+          {sociedadDocuments.length === 0 ? (
+            <p>No hay documentos disponibles para esta sociedad.</p>
+          ) : (
+            <table style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th>Documento</th>
+                  <th>Descripción</th>
+                  <th>Fecha de Subida</th>
+                  <th>URL</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {sociedadDocuments.map((doc) => (
+                  <tr key={doc?.id}>
+                    <td>{doc?.documentacion?.nombre || "No disponible"}</td>
+                    <td>
+                      {doc?.documentacion?.descripcion || "No disponible"}
+                    </td>
+                    <td>
+                      {doc?.documentacion?.fecha_subida
+                        ? new Date(
+                            doc.documentacion.fecha_subida
+                          ).toLocaleDateString()
+                        : "No disponible"}
+                    </td>
+                    <td>
+                      <button
+                        className="table-button"
+                        onClick={() => {
+                          // Primero asegúrate de que el documento tiene una URL válida
+                          const documentUrl = `${BASEURL}/${doc?.documentacion?.url}`;
+                          if (documentUrl) {
+                            setIsSignable(false); // Cambiar el estado
+                            openModal(documentUrl); // Luego abrir el modal
+                          }
+                          console.log(doc);
+                        }}
+                      >
+                        Ver Documento
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+      <div className="tables-container">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center", // Centra verticalmente los elementos
+            gap: "10px",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              alignSelf: "flex-end", // Alinea el texto en el borde inferior
+            }}
+          >
+            Documentos por grupo
+          </h2>
+          <button
+            style={{
+              backgroundColor: isHoveredGroup
+                ? "var(--color-info-hover)"
+                : "var(--color-info)",
+              color: "var(--color-light)",
+              borderRadius: "var(--border-radius)",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              width: "3rem", // Ajusta el ancho del botón
+            }}
+            onClick={() => setIsGroupHidden(!isGroupHidden)}
+            onMouseEnter={() => setIsHoveredGroup(true)}
+            onMouseLeave={() => setIsHoveredGroup(false)}
+          >
+            {isGroupHidden ? "▼" : "▲"}
+          </button>
+        </div>
+        <div
+          style={{
+            maxHeight: isGroupHidden ? 0 : "500px",
+            overflow: "hidden",
+            transition: "max-height 0.4s ease",
+          }}
+        >
+          {groupDocuments.length === 0 ? (
+            <p>No hay documentos asignados a grupos.</p>
+          ) : (
+            <table style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th>Grupo</th>
+                  <th>Departamento</th>
+                  <th>Sociedad</th>
+                  <th>Documento</th>
+                  <th>Descripción</th>
+                  <th>Fecha de Subida</th>
+                  <th>URL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupDocuments.map((doc) => (
+                  <tr key={doc?.id}>
+                    <td>{doc?.grupo?.nombre || "No disponible"}</td>
+                    <td>
+                      {doc?.grupo?.departamento?.nombre || "No disponible"}
+                    </td>
+                    <td>
+                      {doc?.documento?.sociedad?.nombre || "No disponible"}
+                    </td>
+                    <td>{doc?.documento?.nombre || "No disponible"}</td>
+                    <td>{doc?.documento?.descripcion || "No disponible"}</td>
+                    <td>
+                      {doc?.documento?.fecha_subida
+                        ? new Date(
+                            doc.documento.fecha_subida
+                          ).toLocaleDateString()
+                        : "No disponible"}
+                    </td>
+                    <td>
+                      <button
+                        className="table-button"
+                        onClick={() => {
+                          // Primero asegúrate de que el documento tiene una URL válida
+                          const documentUrl = `${BASEURL}/${doc?.documento?.url}`;
+                          if (documentUrl) {
+                            setIsSignable(false); // Cambiar el estado
+                            openModal(documentUrl); // Luego abrir el modal
+                          }
+                        }}
+                      >
+                        Ver Documento
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       <div className="tables-container">
-        <h2>Documentos por Grupo</h2>
-        {groupDocuments.length === 0 ? (
-          <p>No hay documentos disponibles para esta sociedad.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Grupo</th>
-                <th>Departamento</th>
-                <th>Sociedad</th>
-                <th>Nombre del Documento</th>
-                <th>Descripción</th>
-                <th>Fecha de Subida</th>
-                <th>URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupDocuments.map((doc) => (
-                <tr key={doc?.id}>
-                  <td>{doc?.grupo?.nombre || "No disponible"}</td>
-                  <td>{doc?.grupo?.departamento?.nombre || "No disponible"}</td>
-                  <td>{doc?.documento?.sociedad?.nombre || "No disponible"}</td>
-                  <td>{doc?.documento?.nombre || "No disponible"}</td>
-                  <td>{doc?.documento?.descripcion || "No disponible"}</td>
-                  <td>
-                    {doc?.documento?.fecha_subida
-                      ? new Date(
-                          doc.documento.fecha_subida
-                        ).toLocaleDateString()
-                      : "No disponible"}
-                  </td>
-                  <td>
-                    <button
-                      className="table-button"
-                      onClick={() =>
-                        openModal(`http://localhost:3000/${doc.documento?.url}`)
-                      }
-                    >
-                      Ver Documento
-                    </button>
-                  </td>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center", // Centra verticalmente los elementos
+            gap: "10px",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              alignSelf: "flex-end", // Alinea el texto en el borde inferior
+            }}
+          >
+            Documentos por departamento
+          </h2>
+          <button
+            style={{
+              backgroundColor: isHoveredDept
+                ? "var(--color-info-hover)"
+                : "var(--color-info)",
+              color: "var(--color-light)",
+              borderRadius: "var(--border-radius)",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              width: "3rem", // Ajusta el ancho del botón
+            }}
+            onClick={() => setIsDeptHidden(!isDeptHidden)}
+            onMouseEnter={() => setIsHoveredDept(true)}
+            onMouseLeave={() => setIsHoveredDept(false)}
+          >
+            {isDeptHidden ? "▼" : "▲"}
+          </button>
+        </div>
+        <div
+          style={{
+            maxHeight: isDeptHidden ? 0 : "500px",
+            overflow: "hidden",
+            transition: "max-height 0.4s ease",
+          }}
+        >
+          {departmentDocuments.length === 0 ? (
+            <p>No hay documentos asignados a departamentos.</p>
+          ) : (
+            <table style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th>Departamento</th>
+                  <th>Grupos</th>
+                  <th>Sociedad</th>
+                  <th>Documento</th>
+                  <th>Descripción</th>
+                  <th>Fecha de Subida</th>
+                  <th>URL</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {departmentDocuments.map((doc) => (
+                  <tr key={doc?.id}>
+                    <td>{doc?.departamento?.nombre || "No disponible"}</td>
+                    <td>
+                      {doc?.departamento?.grupos
+                        ? doc.departamento.grupos
+                            .map((grupo) => grupo.nombre || "No disponible")
+                            .join(", ")
+                        : "No disponible"}
+                    </td>
+                    <td>
+                      {doc?.documento?.sociedad?.nombre || "No disponible"}
+                    </td>
+                    <td>{doc?.documento?.nombre || "No disponible"}</td>
+                    <td>{doc?.documento?.descripcion || "No disponible"}</td>
+                    <td>
+                      {doc?.documento?.fecha_subida
+                        ? new Date(
+                            doc.documento.fecha_subida
+                          ).toLocaleDateString()
+                        : "No disponible"}
+                    </td>
+                    <td>
+                      <button
+                        className="table-button"
+                        onClick={() => {
+                          // Primero asegúrate de que el documento tiene una URL válida
+                          const documentUrl = `${BASEURL}/${doc?.documento.url}`;
+
+                          if (documentUrl) {
+                            // Pasar la URL del documento y el ID del usuario asignado al modal
+                            openModal(documentUrl);
+                          }
+                        }}
+                      >
+                        Ver Documento
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       <div className="tables-container">
-        <h2>Documentos por Departamento</h2>
-        {departmentDocuments.length === 0 ? (
-          <p>No hay documentos disponibles para esta sociedad.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Departamento</th>
-                <th>Grupos</th>
-                <th>Sociedad</th>
-                <th>Nombre del Documento</th>
-                <th>Descripción</th>
-                <th>Fecha de Subida</th>
-                <th>URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {departmentDocuments.map((doc) => (
-                <tr key={doc?.id}>
-                  <td>{doc?.departamento?.nombre || "No disponible"}</td>
-                  <td>
-                    {doc?.departamento?.grupos
-                      ? doc.departamento.grupos
-                          .map((grupo) => grupo.nombre || "No disponible")
-                          .join(", ")
-                      : "No disponible"}
-                  </td>
-                  <td>{doc?.documento?.sociedad?.nombre || "No disponible"}</td>
-                  <td>{doc?.documento?.nombre || "No disponible"}</td>
-                  <td>{doc?.documento?.descripcion || "No disponible"}</td>
-                  <td>
-                    {doc?.documento?.fecha_subida
-                      ? new Date(
-                          doc.documento.fecha_subida
-                        ).toLocaleDateString()
-                      : "No disponible"}
-                  </td>
-                  <td>
-                    <button
-                      className="table-button"
-                      onClick={() =>
-                        openModal(
-                          `http://localhost:3000/${doc?.documento?.url}`
-                        )
-                      }
-                    >
-                      Ver Documento
-                    </button>
-                  </td>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center", // Centra verticalmente los elementos
+            gap: "10px",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              alignSelf: "flex-end", // Alinea el texto en el borde inferior
+            }}
+          >
+            Documentos por usuario
+          </h2>
+          <button
+            style={{
+              backgroundColor: isHoveredUser
+                ? "var(--color-info-hover)"
+                : "var(--color-info)",
+              color: "var(--color-light)",
+              borderRadius: "var(--border-radius)",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              width: "3rem", // Ajusta el ancho del botón
+            }}
+            onClick={() => setIsUserHidden(!isUserHidden)}
+            onMouseEnter={() => setIsHoveredUser(true)}
+            onMouseLeave={() => setIsHoveredUser(false)}
+          >
+            {isUserHidden ? "▼" : "▲"}
+          </button>
+        </div>
+        <div
+          style={{
+            maxHeight: isUserHidden ? 0 : "500px",
+            overflow: "hidden",
+            transition: "max-height 0.4s ease",
+          }}
+        >
+          {userDocuments.length === 0 ? (
+            <p>No hay documentos asignados a ningún usuario.</p>
+          ) : (
+            <table style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Apellido</th>
+                  <th>Documento</th>
+                  <th>Descripción</th>
+                  <th>Fecha de Subida</th>
+                  <th>Firmado</th>
+                  <th>URL</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {userDocuments.map((doc) => {
+                  const isSigned = doc.firma;
+                  const documentUrl = isSigned
+                    ? `${BASEURL}/${doc.url}` // Si el documento está firmado, usa la URL firmada del usuario
+                    : `${BASEURL}/${doc.documento.url}`; // Si no está firmado, usa la URL de la sociedad
+
+                  return (
+                    <tr key={doc?.id}>
+                      <td>{doc?.usuario?.nombre || "No disponible"}</td>
+                      <td>{doc?.usuario?.apellido || "No disponible"}</td>
+                      <td>{doc?.documento?.nombre || "No disponible"}</td>
+                      <td>{doc?.documento?.descripcion || "No disponible"}</td>
+                      <td>
+                        {doc?.documento?.fecha_subida
+                          ? new Date(
+                              doc.documento.fecha_subida
+                            ).toLocaleDateString()
+                          : "No disponible"}
+                      </td>
+                      <td style={{ color: isSigned ? "green" : "red" }}>
+                        {isSigned ? "Sí" : "No"}
+                      </td>
+                      <td>
+                        <button
+                          className="table-button"
+                          onClick={() => {
+                            const assignedUserId = doc?.usuario?.id;
+                            setIsSignable(true);
+                            openModal(documentUrl, assignedUserId);
+                          }}
+                        >
+                          Ver Documento
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-
-      <div className="tables-container">
-  <h2>Documentos Asignados a Usuarios</h2>
-  {userDocuments.length === 0 ? (
-    <p>No hay documentos asignados a ningún usuario.</p>
-  ) : (
-    <table>
-      <thead>
-        <tr>
-          <th>Nombre del Usuario</th>
-          <th>Apellido</th>
-          <th>Nombre del Documento</th>
-          <th>Descripción</th>
-          <th>Fecha de Subida</th>
-          <th>Firmado</th>
-          <th>URL</th>
-        </tr>
-      </thead>
-      <tbody>
-        {userDocuments.map((doc) => (
-          <tr key={doc?.id}>
-            <td>{doc?.usuario?.nombre || "No disponible"}</td>
-            <td>{doc?.usuario?.apellido || "No disponible"}</td>
-            <td>{doc?.documento?.nombre || "No disponible"}</td>
-            <td>{doc?.documento?.descripcion || "No disponible"}</td>
-            <td>
-              {doc?.documento?.fecha_subida
-                ? new Date(doc.documento.fecha_subida).toLocaleDateString()
-                : "No disponible"}
-            </td>
-            <td style={{ color: doc?.firma ? "green" : "red" }}>
-              {doc?.firma ? "Sí" : "No"}
-            </td>
-            <td>
-              <button
-                className="table-button"
-                onClick={() => openModal(`http://localhost:3000/${doc?.documento?.url}`)}
-              >
-                Ver Documento
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )}
-</div>
-
 
       {isModalOpen && (
-        <div>
-          <SignatureModal
-            previewUrl={previewUrl}
-            closeModal={closeModal}
-            handleSignDocument={handleSignDocument}
-            documentName={documentName}
-          />
+        <div className="modalOverPage">
+          <div className="modalContent">
+            <SignatureModal
+              previewUrl={previewUrl}
+              closeModal={closeModal}
+              handleSignDocument={handleSignDocument}
+              documentName={documentName}
+              isSignable={isSignable}
+              isSigned={
+                userDocuments.find(
+                  (doc) => doc.documento.nombre === documentName
+                )?.firma || false
+              }
+            />
+          </div>
         </div>
       )}
     </>

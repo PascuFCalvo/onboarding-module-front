@@ -100,3 +100,25 @@ button.table-button {
 button.table-button:hover {
   background-color: var(--color-info);
 }
+
+.modalOverPage {
+  position: fixed; /* Asegura que el modal se mantenga en su posición */
+  top: 0;
+  left: 0;
+  width: 100vw; /* Ocupar todo el ancho de la ventana */
+  height: 100vh; /* Ocupar toda la altura de la ventana */
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro semitransparente */
+  display: flex; /* Para centrar el modal */
+  justify-content: center; /* Centrar horizontalmente */
+  align-items: center; /* Centrar verticalmente */
+  z-index: 1000; /* Asegurar que el modal se muestre sobre otros elementos */
+}
+
+.modalContent {
+  background-color: var(--color-light);
+  padding: 20px;
+  border-radius: 8px; /* Bordes redondeados */
+  box-shadow: 0px 5px 15px var(--color-dark); /* Sombra para dar un efecto de profundidad */
+  max-width: 1000px;
+  width: 100%; /* Ajusta el ancho del modal */
+}

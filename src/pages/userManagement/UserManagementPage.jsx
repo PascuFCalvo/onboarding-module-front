@@ -52,10 +52,6 @@ const UserManagement = () => {
       setError("sociedadId no encontrado en el token");
       return;
     }
-    if (!marcaIdFromToken) {
-      setError("marcaId no encontrado en el token");
-      return;
-    }
 
     // Una vez que tenemos sociedadId, obtenemos los usuarios
     fetchUsers(sociedadIdFromToken);
@@ -74,6 +70,10 @@ const UserManagement = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewUser({ ...newUser, [name]: value });
+  };
+
+  const asignarDocumentacion = () => {
+    console.log("Asignar documentación");
   };
 
   const handleAddUser = async (e) => {
@@ -135,7 +135,30 @@ const UserManagement = () => {
               <td>{user.email}</td>
               <td>{user.roles.join(", ")}</td>
               <td>{user.telefono}</td>
-              <td>{user.direccion}</td>
+
+              <td
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                {user.direccion}
+                <button
+                  style={{
+                    display: "flex",
+                    backgroundColor: "var(--color-success)",
+                    minWidth: "80px",
+                    maxWidth: "80px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onClick={asignarDocumentacion}
+                >
+                  ➕📄
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

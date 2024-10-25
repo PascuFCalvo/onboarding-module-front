@@ -1,6 +1,13 @@
 import { useState } from "react";
 import axios from "axios";
 
+let BASEURL = import.meta.env.VITE_BASEURL;
+if (!BASEURL) {
+  throw new Error("La variable VITE_BASEURL no está definida.");
+}
+console.log("Base URL:", BASEURL);
+axios.defaults.baseURL = BASEURL;
+
 export const Ssologin = () => {
   const [usuario] = useState({
     email: "pascualfcalvo@gmail.com",
@@ -14,7 +21,7 @@ export const Ssologin = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:3000/auth/ssologin",
+        `${BASEURL}/auth/ssologin`,
         usuario
       );
       if (response.data.success) {

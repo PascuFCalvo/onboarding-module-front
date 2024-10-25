@@ -1,7 +1,14 @@
 import axios from "axios";
 
-// Configura la URL base para todas las llamadas a la API
-axios.defaults.baseURL = "http://localhost:3000"; // Cambia el puerto si es necesario
+let BASEURL = import.meta.env.VITE_BASEURL;
+
+if (!BASEURL) {
+  throw new Error("La variable VITE_BASEURL no está definida.");
+}
+
+console.log("Base URL:", BASEURL); // Verifica que se imprima correctamente
+
+axios.defaults.baseURL = BASEURL;
 
 axios.interceptors.request.use(
   (config) => {

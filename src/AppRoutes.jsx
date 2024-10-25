@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import Login from "./pages/Login/LoginPage";
 import LandingPage from "./pages/landingPage/LandingPage";
 import ManagerGeneralPage from "./pages/managerGeneralPage/managerGeneralPage";
+import UserGeneralPage from "./pages/userGeneralPage/userGeneralPage";
 import LogoutPage from "./pages/Logout/LogoutPage";
 import Ssologin from "./components/ssologin";
 
@@ -15,6 +16,7 @@ const AppRoutes = () => {
       <Route path="/logout" element={<LogoutPage />} />
       <Route path="/*" element={<h1>ERROR 404</h1>} />
       <Route path="/ssologin" element={<Ssologin />} />
+      <Route path="/user/*" element={<UserGeneralPage />} />
     </Routes>
   );
 };
