@@ -30,7 +30,7 @@ const DocumentacionManagementPage = () => {
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [sociedadDocuments, setSociedadDocuments] = useState([]);
   const [userDocuments, setUserDocuments] = useState([]);
-  const [setError] = useState("");
+  const [error, setError] = useState("");
   const [showUsers, setShowUsers] = useState(false);
   const [showDepartments, setShowDepartments] = useState(false);
   const [showGroups, setShowGroups] = useState(false);
@@ -50,6 +50,10 @@ const DocumentacionManagementPage = () => {
   const [isDeptHidden, setIsDeptHidden] = useState(false);
   const [isGroupHidden, setIsGroupHidden] = useState(false);
   const [isSignable, setIsSignable] = useState(false);
+  const [date, setDate] = useState("");
+  const [todayDate, setTodayDate] = useState("");
+  const [courses, setCourses] = useState({});
+  const [course, setCourse] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -75,6 +79,10 @@ const DocumentacionManagementPage = () => {
 
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    console.log("Curso seleccionado:", course);
+  }, [course]);
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -141,6 +149,13 @@ const DocumentacionManagementPage = () => {
     }
   };
 
+  const getTodayDate = () => {
+    const today = new Date();
+    const formattedDate = today.toISOString().split("T")[0];
+    setTodayDate(formattedDate);
+    setDate(formattedDate); // También actualiza 'date' para establecer la fecha del selector
+  };
+
   const fetchUserDocuments = async () => {
     try {
       const sociedadId = JSON.parse(
@@ -185,12 +200,39 @@ const DocumentacionManagementPage = () => {
       setDepartmentDocuments([]);
     }
   };
+  const fetchAllCourses = async () => {
+    try {
+      const response = await axios.get(`${BASEURL}/turiscool/courses`);
+
+      console.log("Datos de respuesta:", response.data);
+
+      let coursesList = {};
+
+      // Convierte el objeto `courses` en un array usando `Object.values()`
+      if (response.data.courses && typeof response.data.courses === "object") {
+        Object.values(response.data.courses).forEach((course) => {
+          coursesList[course.title] = course.titleId; // Usamos `short_url` como ejemplo
+        });
+      } else {
+        console.error(
+          "La propiedad `courses` no es un objeto o no existe en la respuesta."
+        );
+      }
+
+      setCourses(coursesList);
+      console.log(coursesList); // Imprime el objeto resultante
+    } catch (error) {
+      console.error("Error al obtener los cursos:", error);
+    }
+  };
 
   useEffect(() => {
     fetchSociedadDocuments();
     fetchUserDocuments();
     fetchGrupsDocuments();
     fetchDepartmentsDocuments();
+    getTodayDate();
+    fetchAllCourses();
   }, []);
 
   const handleFileChange = (e) => {
@@ -234,18 +276,21 @@ const DocumentacionManagementPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!documentacion) {
-      setError("Por favor, selecciona un archivo para subir.");
-      return;
-    }
-
     const formData = new FormData();
-    formData.append("file", documentacion);
+
+    // Solo agregar el archivo si `documentacion` no es null o undefined
+    if (documentacion) {
+      formData.append("file", documentacion);
+    }
+    if (course) {
+      formData.append("course", course);
+    }
     formData.append("nombre", nombre);
     formData.append("descripcion", description);
-    formData.append("users", JSON.stringify(selectedUsers)); // Confirmando que se usa JSON.stringify
-    formData.append("departments", JSON.stringify(selectedDepartments)); // Convertir a JSON string
-    formData.append("groups", JSON.stringify(selectedGroups)); // Convertir a JSON string
+    formData.append("users", JSON.stringify(selectedUsers));
+    formData.append("departments", JSON.stringify(selectedDepartments));
+    formData.append("period", date); // Aquí asegúrate de usar 'period' y no 'periodo'
+    formData.append("groups", JSON.stringify(selectedGroups));
     formData.append(
       "sociedad",
       JSON.parse(atob(localStorage.getItem("token").split(".")[1])).sociedadId
@@ -262,13 +307,12 @@ const DocumentacionManagementPage = () => {
       alert("Documentación asignada exitosamente.");
       await fetchSociedadDocuments();
       await fetchUserDocuments();
-
       setSelectedUsers([]);
       setNombre("");
       setDescription("");
       setSelectedDepartments([]);
       setSelectedGroups([]);
-      setDocumentacion(null);
+      setDocumentacion(null); // Asegúrate de resetear el archivo después de subirlo
     } catch (error) {
       setError("Error al subir la documentación: " + error.message);
     }
@@ -330,11 +374,31 @@ const DocumentacionManagementPage = () => {
     setIsHided(!isHided);
   };
 
+  const handleCourseChange = (e) => {
+    setCourse(e.target.value);
+  };
+
+  const handleDateChange = (e) => {
+    const date = e.target.value;
+    let formattedDate = date.split("T")[0];
+    setDate(formattedDate);
+  };
+
   return (
     <>
       <div className="container">
         <h2>Subir Documentación</h2>
         <form onSubmit={(e) => e.preventDefault()}>
+          <p>Selecciona un curso o agrega documentacion</p>
+          <select onChange={handleCourseChange} value={course}>
+            {" "}
+            <option value="">Selecciona un curso</option>
+            {Object.entries(courses).map(([course, id]) => (
+              <option key={id} value={id}>
+                {course}
+              </option>
+            ))}
+          </select>
           <input type="file" onChange={handleFileChange} required />
           <input
             type="text"
@@ -414,6 +478,14 @@ const DocumentacionManagementPage = () => {
               ))}
           </div>
 
+          <h4>Periodo</h4>
+
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => handleDateChange(e)}
+          />
+
           <button className="add-button" type="button" onClick={handleSubmit}>
             Asignar Documentación
           </button>
@@ -477,7 +549,9 @@ const DocumentacionManagementPage = () => {
                   <th>Documento</th>
                   <th>Descripción</th>
                   <th>Fecha de Subida</th>
-                  <th>URL</th>
+                  <th>Terminar antes de:</th>
+                  <th>Documento</th>
+                  <th>Link curso</th>
                 </tr>
               </thead>
               <tbody>
@@ -495,20 +569,47 @@ const DocumentacionManagementPage = () => {
                         : "No disponible"}
                     </td>
                     <td>
-                      <button
-                        className="table-button"
-                        onClick={() => {
-                          // Primero asegúrate de que el documento tiene una URL válida
-                          const documentUrl = `${BASEURL}/${doc?.documentacion?.url}`;
-                          if (documentUrl) {
-                            setIsSignable(false); // Cambiar el estado
-                            openModal(documentUrl); // Luego abrir el modal
-                          }
-                          console.log(doc);
-                        }}
-                      >
-                        Ver Documento
-                      </button>
+                      {doc?.documentacion?.periodo
+                        ? new Date(
+                            doc.documentacion.periodo
+                          ).toLocaleDateString()
+                        : "No disponible"}
+                    </td>
+
+                    {/* remder condicional, si no hay documento en vez del boton renderiziar "sin documentacion" */}
+                    <td>
+                      {!doc?.documentacion?.url ? (
+                        <p>Sin Documentacion</p>
+                      ) : (
+                        <button
+                          className="table-button"
+                          onClick={() => {
+                            // Primero asegúrate de que el documento tiene una URL válida
+                            const documentUrl = `${BASEURL}/${doc?.documentacion?.url}`;
+                            if (documentUrl) {
+                              setIsSignable(false); // Cambiar el estado
+                              openModal(documentUrl); // Luego abrir el modal
+                            }
+                            console.log(doc);
+                          }}
+                        >
+                          Ver Documento
+                        </button>
+                      )}
+                    </td>
+                    <td>
+                      {!doc?.documentacion?.linkCourse ||
+                      doc?.documentacion?.linkCourse.includes("null") ? (
+                        <p> - </p>
+                      ) : (
+                        <a
+                          href={doc?.documentacion?.linkCourse}
+                          target="_blank"
+                          style={{ color: "var(--color-dark)", textDecoration: "none", alignSelf: "center", justifySelf : "center" }} 
+                        >
+                          LINK CURSO
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))}

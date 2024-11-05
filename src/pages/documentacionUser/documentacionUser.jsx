@@ -13,14 +13,10 @@ let BASEURL = import.meta.env.VITE_BASEURL;
 if (!BASEURL) {
   throw new Error("La variable VITE_BASEURL no está definida.");
 }
-console.log("Base URL:", BASEURL);
 axios.defaults.baseURL = BASEURL;
 
 const DocumentacionUserPage = () => {
-  const [sociedadDocuments, setSociedadDocuments] = useState([]);
-  const [userDocuments, setUserDocuments] = useState([]);
-  const [groupDocuments, setGroupDocuments] = useState([]);
-  const [departmentDocuments, setDepartmentDocuments] = useState([]);
+  const [allDocuments, setAllDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,87 +40,85 @@ const DocumentacionUserPage = () => {
 
   useEffect(() => {
     if (userId && grupoId && departamentoId) {
-      fetchSociedadDocuments();
-      fetchUserDocuments();
-      fetchGrupsDocuments();
-      fetchDepartmentsDocuments();
+      fetchAllDocuments();
     }
   }, [userId, grupoId, departamentoId]);
 
-  const fetchSociedadDocuments = async () => {
+  const fetchAllDocuments = async () => {
     try {
       const sociedadId = JSON.parse(
         atob(localStorage.getItem("token").split(".")[1])
       ).sociedadId;
-      const response = await getDocumentacionPorSociedad(sociedadId);
-      setSociedadDocuments(response.data);
-    } catch (error) {
-      console.error("Error al obtener documentos de la sociedad:", error);
-    }
-  };
 
-  const fetchUserDocuments = async () => {
-    try {
-      const sociedadId = JSON.parse(
-        atob(localStorage.getItem("token").split(".")[1])
-      ).sociedadId;
-      const response = await getDocumentosPorUsuarioYsociedad(sociedadId);
-      const filteredDocuments = response.data.filter(
-        (doc) => doc.usuario.id === userId
-      );
-      setUserDocuments(filteredDocuments);
-    } catch (error) {
-      console.error("Error al obtener documentos asignados:", error);
-    }
-  };
+      const sociedadRes = await getDocumentacionPorSociedad(sociedadId);
+      const userRes = await getDocumentosPorUsuarioYsociedad(sociedadId);
 
-  const fetchGrupsDocuments = async () => {
-    try {
-      const sociedadId = JSON.parse(
-        atob(localStorage.getItem("token").split(".")[1])
-      ).sociedadId;
-      const response = await getDocumentosPorGrupoYsociedad(sociedadId);
-      const filteredDocuments = response.data.filter(
-        (doc) => doc.grupo.id === grupoId
-      );
-      setGroupDocuments(filteredDocuments);
-    } catch (error) {
-      console.error("Error al obtener documentos asignados por grupo:", error);
-    }
-  };
+      let groupRes = { data: [] };
+      let departmentRes = { data: [] };
 
-  const fetchDepartmentsDocuments = async () => {
-    try {
-      const sociedadId = JSON.parse(
-        atob(localStorage.getItem("token").split(".")[1])
-      ).sociedadId;
-      const response = await getDocumentosPorDepartamentoYsociedad(sociedadId);
-      const filteredDocuments = response.data.filter(
-        (doc) => doc.departamento.id === departamentoId
-      );
-      setDepartmentDocuments(filteredDocuments);
+      try {
+        groupRes = await getDocumentosPorGrupoYsociedad(sociedadId);
+      } catch (error) {
+        if (error.response && error.response.status !== 404) {
+          console.error("Error al obtener documentos de grupo:", error);
+        }
+      }
+
+      try {
+        departmentRes = await getDocumentosPorDepartamentoYsociedad(sociedadId);
+      } catch (error) {
+        if (error.response && error.response.status !== 404) {
+          console.error("Error al obtener documentos de departamento:", error);
+        }
+      }
+
+      const sociedadDocuments = sociedadRes.data.map((doc) => ({
+        ...doc,
+        tipo: "Sociedad",
+      }));
+      const userDocuments = userRes.data
+        .filter((doc) => doc.usuario.id === userId)
+        .map((doc) => ({ ...doc, tipo: "Usuario" }));
+      const groupDocuments = groupRes.data
+        .filter((doc) => doc.grupo?.id === grupoId)
+        .map((doc) => ({ ...doc, tipo: "Grupo" }));
+      const departmentDocuments = departmentRes.data
+        .filter((doc) => doc.departamento?.id === departamentoId)
+        .map((doc) => ({ ...doc, tipo: "Departamento" }));
+
+      const combinedDocuments = [
+        ...sociedadDocuments,
+        ...userDocuments,
+        ...groupDocuments,
+        ...departmentDocuments,
+      ];
+
+      // Ordenar los documentos por periodo (fecha de finalización) de forma ascendente
+      combinedDocuments.sort((a, b) => {
+        const dateA = new Date(
+          a.documento?.periodo || a.documentacion?.periodo
+        );
+        const dateB = new Date(
+          b.documento?.periodo || b.documentacion?.periodo
+        );
+        return dateA - dateB;
+      });
+
+      setAllDocuments(combinedDocuments);
     } catch (error) {
-      console.error(
-        "Error al obtener documentos asignados por departamento:",
-        error
-      );
+      console.error("Error al obtener documentos generales:", error);
     } finally {
-      setIsLoading(false); // Marcar como cargado
+      setIsLoading(false);
     }
-  };
-
-  const isDocumentInUserDocuments = (documentName) => {
-    return userDocuments.some((doc) => doc.documento?.nombre === documentName);
   };
 
   const openModal = (url, isUserDocument = false, isSigned = false) => {
     const documentName = url.split("/").pop();
 
-    // Solo permitir firma en documentos de la tabla de usuario
-    if (isUserDocument && isDocumentInUserDocuments(documentName)) {
-      setIsSignable(!isSigned); // Permitir firmar si no está firmado
+    if (isUserDocument) {
+      setIsSignable(!isSigned);
     } else {
-      setIsSignable(false); // No permitir firmar en otras tablas
+      setIsSignable(false);
     }
 
     setPreviewUrl(url);
@@ -143,8 +137,7 @@ const DocumentacionUserPage = () => {
       const response = await createSignature(signatureInfo);
       const { documento_id } = response.data;
 
-      // Actualizar el estado de firma en userDocuments
-      setUserDocuments((prevDocuments) =>
+      setAllDocuments((prevDocuments) =>
         prevDocuments.map((doc) =>
           doc.documento.id === documento_id ? { ...doc, firma: true } : doc
         )
@@ -156,196 +149,80 @@ const DocumentacionUserPage = () => {
     }
   };
 
+  const getBackgroundColor = (date) => {
+    if (!date) return "white";
+    const now = new Date();
+    const targetDate = new Date(date);
+    const diffInDays = (targetDate - now) / (1000 * 60 * 60 * 24);
+
+    if (diffInDays <= 2) return "rgb(255, 0, 0, 0.5)";
+    else if (diffInDays <= 7) return "rgba(255, 69, 0, 0.4)";
+    else if (diffInDays <= 14) return "rgba(255, 165, 0, 0.3)";
+    else return "lightgreen";
+  };
+
   if (isLoading) return <p>Cargando documentos...</p>;
 
   return (
     <div>
-      <div className="tables-container">
-        <h2>Documentacion general</h2>
-        {sociedadDocuments.length === 0 ? (
-          <p>No hay documentos disponibles para esta sociedad.</p>
-        ) : (
-          <table style={{ width: "100%" }}>
-            <thead>
-              <tr>
-                <th>Documento</th>
-                <th>Descripción</th>
-                <th>Fecha de Subida</th>
-                <th>URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sociedadDocuments.map((doc) => (
-                <tr key={doc?.id}>
-                  <td>{doc?.documentacion?.nombre || "No disponible"}</td>
-                  <td>{doc?.documentacion?.descripcion || "No disponible"}</td>
-                  <td>
-                    {doc?.documentacion?.fecha_subida
-                      ? new Date(
-                          doc.documentacion.fecha_subida
-                        ).toLocaleDateString()
+      <h2>ONBOARDING</h2>
+      {allDocuments.length === 0 ? (
+        <p>No hay documentos disponibles.</p>
+      ) : (
+        <table style={{ width: "100%" }}>
+          <thead>
+            <tr>
+              <th>Documento</th>
+              <th>Descripción</th>
+              <th>Fecha de Finalización</th>
+              <th>Tipo</th>
+              <th>Firmado</th>
+              <th>URL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allDocuments.map((doc, index) => {
+              const documentData = doc.documento || doc.documentacion;
+              const isSigned = doc.firma || false;
+              const documentUrl = `${BASEURL}/${documentData?.url}`;
+              const key = `${doc.id}-${index}`; // Clave única
+
+              return (
+                <tr key={key}>
+                  <td>{documentData?.nombre || "No disponible"}</td>
+                  <td>{documentData?.descripcion || "No disponible"}</td>
+                  <td
+                    style={{
+                      backgroundColor: getBackgroundColor(
+                        documentData?.periodo
+                      ),
+                    }}
+                  >
+                    {documentData?.periodo
+                      ? new Date(documentData.periodo).toLocaleDateString()
                       : "No disponible"}
+                  </td>
+                  <td>{doc.tipo}</td>
+                  <td style={{ color: isSigned ? "green" : "red" }}>
+                    {isSigned ? "Sí" : "No"}
                   </td>
                   <td>
                     <button
                       className="table-button"
                       onClick={() =>
-                        openModal(`${BASEURL}/${doc?.documentacion?.url}`)
+                        openModal(documentUrl, doc.tipo === "Usuario", isSigned)
                       }
                     >
                       Ver Documento
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
 
-      <div className="tables-container">
-        <h2>Documentos por usuario</h2>
-        {userDocuments.length === 0 ? (
-          <p>No hay documentos asignados a ningún usuario.</p>
-        ) : (
-          <table style={{ width: "100%" }}>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Documento</th>
-                <th>Descripción</th>
-                <th>Fecha de Subida</th>
-                <th>Firmado</th>
-                <th>URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {userDocuments.map((doc) => {
-                const isSigned = doc.firma;
-                const documentUrl = isSigned
-                  ? `${BASEURL}/${doc.url}` // URL para documento firmado
-                  : `${BASEURL}/${doc.documento.url}`; // URL para documento sin firmar
-
-                return (
-                  <tr key={doc?.id}>
-                    <td>{doc?.usuario?.nombre || "No disponible"}</td>
-                    <td>{doc?.usuario?.apellido || "No disponible"}</td>
-                    <td>{doc?.documento?.nombre || "No disponible"}</td>
-                    <td>{doc?.documento?.descripcion || "No disponible"}</td>
-                    <td>
-                      {doc?.documento?.fecha_subida
-                        ? new Date(
-                            doc.documento.fecha_subida
-                          ).toLocaleDateString()
-                        : "No disponible"}
-                    </td>
-                    <td style={{ color: isSigned ? "green" : "red" }}>
-                      {isSigned ? "Sí" : "No"}
-                    </td>
-                    <td>
-                      <button
-                        className="table-button"
-                        onClick={() => openModal(documentUrl, true, isSigned)}
-                      >
-                        Ver Documento
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="tables-container">
-        <h2>Documentacion asignada al grupo</h2>
-        {groupDocuments.length === 0 ? (
-          <p>No hay documentos asignados a este grupo.</p>
-        ) : (
-          <table style={{ width: "100%" }}>
-            <thead>
-              <tr>
-                <th>Documento</th>
-                <th>Descripción</th>
-                <th>Fecha de Subida</th>
-                <th>URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupDocuments.map((doc) => (
-                <tr key={doc?.documento?.id}>
-                  <td>{doc?.documento?.nombre || "No disponible"}</td>
-                  <td>{doc?.documento?.descripcion || "No disponible"}</td>
-                  <td>
-                    {doc?.documento?.fecha_subida
-                      ? new Date(
-                          doc.documento.fecha_subida
-                        ).toLocaleDateString()
-                      : "No disponible"}
-                  </td>
-                  <td>
-                    <button
-                      className="table-button"
-                      onClick={() =>
-                        openModal(`${BASEURL}/${doc?.documento?.url}`)
-                      }
-                    >
-                      Ver Documento
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="tables-container">
-        <h2>Documentacion asignada al departamento</h2>
-        {departmentDocuments.length === 0 ? (
-          <p>No hay documentos asignados a este departamento.</p>
-        ) : (
-          <table style={{ width: "100%" }}>
-            <thead>
-              <tr>
-                <th>Documento</th>
-                <th>Descripción</th>
-                <th>Fecha de Subida</th>
-                <th>URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {departmentDocuments.map((doc) => (
-                <tr key={doc?.documento?.id}>
-                  <td>{doc?.documento?.nombre || "No disponible"}</td>
-                  <td>{doc?.documento?.descripcion || "No disponible"}</td>
-                  <td>
-                    {doc?.documento?.fecha_subida
-                      ? new Date(
-                          doc.documento.fecha_subida
-                        ).toLocaleDateString()
-                      : "No disponible"}
-                  </td>
-                  <td>
-                    <button
-                      className="table-button"
-                      onClick={() =>
-                        openModal(`${BASEURL}/${doc?.documento?.url}`)
-                      }
-                    >
-                      Ver Documento
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Modal de firma */}
       {isModalOpen && (
         <div className="modalOverPage">
           <div className="modalContent">
@@ -354,12 +231,12 @@ const DocumentacionUserPage = () => {
               closeModal={closeModal}
               handleSignDocument={handleSignDocument}
               documentName={documentName}
+              isSignable={isSignable}
               isSigned={
-                userDocuments.find(
-                  (doc) => doc.documento.nombre === documentName
+                allDocuments.find(
+                  (doc) => doc.documento?.nombre === documentName
                 )?.firma || false
               }
-              isSignable={isSignable}
             />
           </div>
         </div>

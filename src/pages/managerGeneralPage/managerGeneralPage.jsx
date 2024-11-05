@@ -6,11 +6,11 @@ import DepartamentManagement from "../departamentosManagement/DepartmentManageme
 import GroupManagement from "../groupManagement/GroupManagementPage.jsx";
 import UserManagement from "../userManagement/UserManagementPage.jsx";
 import NotificacionesManagement from "../notificacionesManagement/NotificacionesManagementPage.jsx";
-import DocumentacionManagement from "../documentacionManagement/DocumentacionManagementPage.jsx";
 import Ssologin from "../../components/ssologin.jsx";
 import ManagerConfiguracion from "../managerConfiguracion/managerConfiguracion.jsx";
 import Logout from "../Logout/LogoutPage.jsx";
 import WelcomenManagement from "../welcomeManagement/welcomeManagtement.jsx";
+import PreDocumentacionManagement from "../preDocumentacionManagement/preDocumentacionManagement.jsx";
 import "./ManagerGeneralPage.css";
 
 const ManagerGeneralPage = () => {
@@ -29,7 +29,10 @@ const ManagerGeneralPage = () => {
               path="notificaciones"
               element={<NotificacionesManagement />}
             />
-            <Route path="documentacion" element={<DocumentacionManagement />} />
+            <Route
+              path="documentacion/*"
+              element={<PreDocumentacionManagement />}
+            />
             <Route path="ssologin" element={<Ssologin />} />
             <Route path="configuracion" element={<ManagerConfiguracion />} />
             <Route path="logout" element={<Logout />} />
