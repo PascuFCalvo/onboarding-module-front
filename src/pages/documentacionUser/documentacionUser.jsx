@@ -17,7 +17,9 @@ axios.defaults.baseURL = BASEURL;
 
 const DocumentacionUserPage = () => {
   const [allDocuments, setAllDocuments] = useState([]);
+  const [groupedDocuments, setGroupedDocuments] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [openSections, setOpenSections] = useState({});
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [documentName, setDocumentName] = useState("");
@@ -93,23 +95,32 @@ const DocumentacionUserPage = () => {
         ...departmentDocuments,
       ];
 
-      // Ordenar los documentos por periodo (fecha de finalización) de forma ascendente
-      combinedDocuments.sort((a, b) => {
-        const dateA = new Date(
-          a.documento?.periodo || a.documentacion?.periodo
-        );
-        const dateB = new Date(
-          b.documento?.periodo || b.documentacion?.periodo
-        );
-        return dateA - dateB;
-      });
+      // Agrupación de documentos por fecha de finalización
+      const groupedByDate = combinedDocuments.reduce((acc, doc) => {
+        const date = doc.documento?.periodo || doc.documentacion?.periodo;
+        const formattedDate = date
+          ? new Date(date).toLocaleDateString()
+          : "Sin Fecha";
+        if (!acc[formattedDate]) {
+          acc[formattedDate] = [];
+        }
+        acc[formattedDate].push(doc);
+        return acc;
+      }, {});
 
-      setAllDocuments(combinedDocuments);
+      setGroupedDocuments(groupedByDate);
     } catch (error) {
       console.error("Error al obtener documentos generales:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const toggleSection = (date) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [date]: !prev[date],
+    }));
   };
 
   const openModal = (url, isUserDocument = false, isSigned = false) => {
@@ -149,78 +160,97 @@ const DocumentacionUserPage = () => {
     }
   };
 
-  const getBackgroundColor = (date) => {
-    if (!date) return "white";
-    const now = new Date();
-    const targetDate = new Date(date);
-    const diffInDays = (targetDate - now) / (1000 * 60 * 60 * 24);
-
-    if (diffInDays <= 2) return "rgb(255, 0, 0, 0.5)";
-    else if (diffInDays <= 7) return "rgba(255, 69, 0, 0.4)";
-    else if (diffInDays <= 14) return "rgba(255, 165, 0, 0.3)";
-    else return "lightgreen";
-  };
-
   if (isLoading) return <p>Cargando documentos...</p>;
 
   return (
     <div>
       <h2>ONBOARDING</h2>
-      {allDocuments.length === 0 ? (
+      {Object.keys(groupedDocuments).length === 0 ? (
         <p>No hay documentos disponibles.</p>
       ) : (
-        <table style={{ width: "100%" }}>
-          <thead>
-            <tr>
-              <th>Documento</th>
-              <th>Descripción</th>
-              <th>Fecha de Finalización</th>
-              <th>Tipo</th>
-              <th>Firmado</th>
-              <th>URL</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allDocuments.map((doc, index) => {
-              const documentData = doc.documento || doc.documentacion;
-              const isSigned = doc.firma || false;
-              const documentUrl = `${BASEURL}/${documentData?.url}`;
-              const key = `${doc.id}-${index}`; // Clave única
+        Object.keys(groupedDocuments).map((date) => (
+          <div key={date} style={{ marginBottom: "1rem" }}>
+            <h3
+              onClick={() => toggleSection(date)}
+              style={{ cursor: "pointer" }}
+            >
+              {openSections[date] ? "▼" : "►"} {date}
+            </h3>
+            {openSections[date] && (
+              <table style={{ width: "100%" }}>
+                <thead>
+                  <tr>
+                    <th>Documento</th>
+                    <th>Descripción</th>
+                    <th>Tipo</th>
+                    <th>Firmado</th>
+                    <th>Documentacion</th>
+                    <th>Link Curso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupedDocuments[date].map((doc, index) => {
+                    const documentData = doc.documento || doc.documentacion;
+                    const isSigned = doc.firma || false;
+                    const documentUrl = documentData?.url
+                      ? `${BASEURL}/${documentData.url}`
+                      : null;
+                    const key = `${doc.id}-${index}`; // Clave única
 
-              return (
-                <tr key={key}>
-                  <td>{documentData?.nombre || "No disponible"}</td>
-                  <td>{documentData?.descripcion || "No disponible"}</td>
-                  <td
-                    style={{
-                      backgroundColor: getBackgroundColor(
-                        documentData?.periodo
-                      ),
-                    }}
-                  >
-                    {documentData?.periodo
-                      ? new Date(documentData.periodo).toLocaleDateString()
-                      : "No disponible"}
-                  </td>
-                  <td>{doc.tipo}</td>
-                  <td style={{ color: isSigned ? "green" : "red" }}>
-                    {isSigned ? "Sí" : "No"}
-                  </td>
-                  <td>
-                    <button
-                      className="table-button"
-                      onClick={() =>
-                        openModal(documentUrl, doc.tipo === "Usuario", isSigned)
-                      }
-                    >
-                      Ver Documento
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    return (
+                      <tr key={key}>
+                        <td>{documentData?.nombre || "No disponible"}</td>
+                        <td>{documentData?.descripcion || "No disponible"}</td>
+                        <td>{doc.tipo}</td>
+                        <td style={{ color: isSigned ? "green" : "red" }}>
+                          {isSigned ? "Sí" : "No"}
+                        </td>
+                        <td>
+                          {documentUrl ? (
+                            <button
+                              className="table-button"
+                              onClick={() =>
+                                openModal(
+                                  documentUrl,
+                                  doc.tipo === "Usuario",
+                                  isSigned
+                                )
+                              }
+                            >
+                              Ver Documento
+                            </button>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td>
+                          {documentData?.linkCourse &&
+                          !documentData.linkCourse.includes("null") ? (
+                            <a
+                              href={documentData.linkCourse}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: "var(--color-dark)",
+                                textDecoration: "none",
+                                alignSelf: "center",
+                                justifySelf: "center",
+                              }}
+                            >
+                              LINK CURSO
+                            </a>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ))
       )}
 
       {isModalOpen && (

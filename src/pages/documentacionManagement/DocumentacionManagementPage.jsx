@@ -576,10 +576,10 @@ const DocumentacionManagementPage = () => {
                         : "No disponible"}
                     </td>
 
-                    {/* remder condicional, si no hay documento en vez del boton renderiziar "sin documentacion" */}
+                    {/* remder condicional, si no hay documento en vez del boton renderiziar "-" */}
                     <td>
                       {!doc?.documentacion?.url ? (
-                        <p>Sin Documentacion</p>
+                        <p>-</p>
                       ) : (
                         <button
                           className="table-button"
@@ -605,7 +605,12 @@ const DocumentacionManagementPage = () => {
                         <a
                           href={doc?.documentacion?.linkCourse}
                           target="_blank"
-                          style={{ color: "var(--color-dark)", textDecoration: "none", alignSelf: "center", justifySelf : "center" }} 
+                          style={{
+                            color: "var(--color-dark)",
+                            textDecoration: "none",
+                            alignSelf: "center",
+                            justifySelf: "center",
+                          }}
                         >
                           LINK CURSO
                         </a>
@@ -672,7 +677,8 @@ const DocumentacionManagementPage = () => {
                   <th>Documento</th>
                   <th>Descripción</th>
                   <th>Fecha de Subida</th>
-                  <th>URL</th>
+                  <th>Documento</th>
+                  <th>Link curso</th>
                 </tr>
               </thead>
               <tbody>
@@ -695,19 +701,42 @@ const DocumentacionManagementPage = () => {
                         : "No disponible"}
                     </td>
                     <td>
-                      <button
-                        className="table-button"
-                        onClick={() => {
-                          // Primero asegúrate de que el documento tiene una URL válida
-                          const documentUrl = `${BASEURL}/${doc?.documento?.url}`;
-                          if (documentUrl) {
-                            setIsSignable(false); // Cambiar el estado
-                            openModal(documentUrl); // Luego abrir el modal
-                          }
-                        }}
-                      >
-                        Ver Documento
-                      </button>
+                      {!doc?.documento?.url ? (
+                        <p>-</p>
+                      ) : (
+                        <button
+                          className="table-button"
+                          onClick={() => {
+                            // Primero asegúrate de que el documento tiene una URL válida
+                            const documentUrl = `${BASEURL}/${doc?.documento?.url}`;
+                            if (documentUrl) {
+                              setIsSignable(false); // Cambiar el estado
+                              openModal(documentUrl); // Luego abrir el modal
+                            }
+                          }}
+                        >
+                          Ver Documento
+                        </button>
+                      )}
+                    </td>
+                    <td>
+                      {!doc?.documento?.linkCourse ||
+                      doc?.documento?.linkCourse.includes("null") ? (
+                        <p> - </p>
+                      ) : (
+                        <a
+                          href={doc?.documento?.linkCourse}
+                          target="_blank"
+                          style={{
+                            color: "var(--color-dark)",
+                            textDecoration: "none",
+                            alignSelf: "center",
+                            justifySelf: "center",
+                          }}
+                        >
+                          LINK CURSO
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -771,7 +800,8 @@ const DocumentacionManagementPage = () => {
                   <th>Documento</th>
                   <th>Descripción</th>
                   <th>Fecha de Subida</th>
-                  <th>URL</th>
+                  <th>Documento</th>
+                  <th>Link curso</th>
                 </tr>
               </thead>
               <tbody>
@@ -798,20 +828,43 @@ const DocumentacionManagementPage = () => {
                         : "No disponible"}
                     </td>
                     <td>
-                      <button
-                        className="table-button"
-                        onClick={() => {
-                          // Primero asegúrate de que el documento tiene una URL válida
-                          const documentUrl = `${BASEURL}/${doc?.documento.url}`;
+                      {!doc?.documento?.url ? (
+                        <p>-</p>
+                      ) : (
+                        <button
+                          className="table-button"
+                          onClick={() => {
+                            // Primero asegúrate de que el documento tiene una URL válida
+                            const documentUrl = `${BASEURL}/${doc?.documento.url}`;
 
-                          if (documentUrl) {
-                            // Pasar la URL del documento y el ID del usuario asignado al modal
-                            openModal(documentUrl);
-                          }
-                        }}
-                      >
-                        Ver Documento
-                      </button>
+                            if (documentUrl) {
+                              // Pasar la URL del documento y el ID del usuario asignado al modal
+                              openModal(documentUrl);
+                            }
+                          }}
+                        >
+                          Ver Documento
+                        </button>
+                      )}
+                    </td>
+                    <td>
+                      {!doc?.documento?.linkCourse ||
+                      doc?.documento?.linkCourse.includes("null") ? (
+                        <p> - </p>
+                      ) : (
+                        <a
+                          href={doc?.documento?.linkCourse}
+                          target="_blank"
+                          style={{
+                            color: "var(--color-dark)",
+                            textDecoration: "none",
+                            alignSelf: "center",
+                            justifySelf: "center",
+                          }}
+                        >
+                          LINK CURSO
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -875,7 +928,8 @@ const DocumentacionManagementPage = () => {
                   <th>Descripción</th>
                   <th>Fecha de Subida</th>
                   <th>Firmado</th>
-                  <th>URL</th>
+                  <th>Documento</th>
+                  <th>Link curso</th>
                 </tr>
               </thead>
               <tbody>
@@ -902,16 +956,39 @@ const DocumentacionManagementPage = () => {
                         {isSigned ? "Sí" : "No"}
                       </td>
                       <td>
-                        <button
-                          className="table-button"
-                          onClick={() => {
-                            const assignedUserId = doc?.usuario?.id;
-                            setIsSignable(true);
-                            openModal(documentUrl, assignedUserId);
-                          }}
-                        >
-                          Ver Documento
-                        </button>
+                        {!doc?.documento?.url ? (
+                          <p>-</p>
+                        ) : (
+                          <button
+                            className="table-button"
+                            onClick={() => {
+                              const assignedUserId = doc?.usuario?.id;
+                              setIsSignable(true);
+                              openModal(documentUrl, assignedUserId);
+                            }}
+                          >
+                            Ver Documento
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        {!doc?.documento?.linkCourse ||
+                        doc?.documento?.linkCourse.includes("null") ? (
+                          <p> - </p>
+                        ) : (
+                          <a
+                            href={doc?.documento?.linkCourse}
+                            target="_blank"
+                            style={{
+                              color: "var(--color-dark)",
+                              textDecoration: "none",
+                              alignSelf: "center",
+                              justifySelf: "center",
+                            }}
+                          >
+                            LINK CURSO
+                          </a>
+                        )}
                       </td>
                     </tr>
                   );

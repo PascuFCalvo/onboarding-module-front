@@ -3,34 +3,34 @@ import { getRoles, getUsuarios, createUsuario } from "../../api";
 import "./UserManagementPage.css";
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([]); // Estado para almacenar la lista de usuarios
-  const [error, setError] = useState(""); // Estado para manejar errores
-  const [sociedadId, setSociedadId] = useState(null); // Estado para almacenar el ID de la sociedad
-  const [marcaId, setMarcaId] = useState(null); // Estado para almacenar el ID de la marca
-  const [roles, setRoles] = useState([]); // Estado para almacenar los roles disponibles
+  const [users, setUsers] = useState([]);
+  const [error, setError] = useState("");
+  const [sociedadId, setSociedadId] = useState(null);
+  const [marcaId, setMarcaId] = useState(null);
+  const [roles, setRoles] = useState([]);
   const [newUser, setNewUser] = useState({
-    // Estado para el nuevo usuario
     nombre: "",
     apellido: "",
     email: "",
     telefono: "",
     direccion: "",
     rol_id: "",
+    sociedad_id: "",
+    marca_id: "",
   });
-  const [showForm, setShowForm] = useState(false); // Estado para mostrar/ocultar el formulario
+  const [showForm, setShowForm] = useState(false);
 
   // Efecto para obtener roles
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const response = await getRoles(); // Llama a getRoles como una función
+        const response = await getRoles();
         setRoles(response.data);
       } catch (error) {
-        setError(error.message);
+        setError("Error al cargar roles: " + error.message);
       }
     };
-
-    fetchRoles(); // Llama a la función para obtener roles
+    fetchRoles();
   }, []);
 
   // Efecto para obtener sociedadId y marcaId desde el token
@@ -43,33 +43,35 @@ const UserManagement = () => {
 
     const decodedToken = JSON.parse(atob(token.split(".")[1]));
     const sociedadIdFromToken = decodedToken.sociedadId;
-    const marcaIdFromToken = decodedToken.marcaId; // Asegúrate de que el token incluya este campo
+    const marcaIdFromToken = decodedToken.marcaId;
 
     setSociedadId(sociedadIdFromToken);
     setMarcaId(marcaIdFromToken);
 
+    console.log("sociedadIdFromToken", sociedadIdFromToken);
+    console.log("marcaIdFromToken", marcaIdFromToken);
+
     if (!sociedadIdFromToken) {
-      setError("sociedadId no encontrado en el token");
+      setError("ID de Sociedad no encontrado en el token");
       return;
     }
 
-    // Una vez que tenemos sociedadId, obtenemos los usuarios
     fetchUsers(sociedadIdFromToken);
   }, []);
 
   // Función para obtener usuarios
   const fetchUsers = async (sociedadId) => {
     try {
-      const response = await getUsuarios(sociedadId); // Llama a getUsuarios con el ID de sociedad
+      const response = await getUsuarios(sociedadId);
       setUsers(response.data);
     } catch (error) {
-      setError(error.message);
+      setError("Error al cargar usuarios: " + error.message);
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewUser({ ...newUser, [name]: value });
+    setNewUser((prev) => ({ ...prev, [name]: value }));
   };
 
   const asignarDocumentacion = () => {
@@ -77,10 +79,9 @@ const UserManagement = () => {
   };
 
   const handleAddUser = async (e) => {
-    e.preventDefault(); // Evita la recarga de la página
+    e.preventDefault();
     try {
-      // Asegúrate de que sociedadId y marcaId estén definidos
-      if (!sociedadId || !marcaId) {
+      if (!sociedadId ) {
         setError("sociedadId o marcaId no están disponibles.");
         return;
       }
@@ -88,26 +89,23 @@ const UserManagement = () => {
       const usuarioData = {
         ...newUser,
         sociedad_id: sociedadId,
-        marca_id: marcaId,
       };
-      await createUsuario(usuarioData); // Llama a la API para crear el usuario
+
+      await createUsuario(usuarioData);
       alert("Usuario creado exitosamente");
       setNewUser({
-        // Resetea el formulario
         nombre: "",
         apellido: "",
         email: "",
         telefono: "",
         direccion: "",
         rol_id: "",
-      });
-      setShowForm(false); // Ocultar el formulario después de crear el usuario
-
-      // Actualiza la lista de usuarios
-      fetchUsers(sociedadId); // Llama a fetchUsers para actualizar la lista
+        sociedad_id: "",
+        marca_id: "",});
+      setShowForm(false);
+      fetchUsers(sociedadId);
     } catch (error) {
-      console.error("Error al crear usuario:", error);
-      setError("No se pudo crear el usuario");
+      setError("Error al crear usuario: " + error.message);
     }
   };
 
@@ -133,31 +131,30 @@ const UserManagement = () => {
               <td>{user.nombre}</td>
               <td>{user.apellido}</td>
               <td>{user.email}</td>
-              <td>{user.roles.join(", ")}</td>
+              <td>
+                {user.usuarioRoles && user.usuarioRoles.length > 0
+                  ? user.usuarioRoles.map((role) => role.rol.nombre).join(", ")
+                  : "Sin rol"}
+              </td>
               <td>{user.telefono}</td>
-
-              <td
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                {user.direccion}
-                <button
-                  style={{
-                    display: "flex",
-                    backgroundColor: "var(--color-success)",
-                    minWidth: "80px",
-                    maxWidth: "80px",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                  onClick={asignarDocumentacion}
-                >
-                  ➕📄
-                </button>
+              <td>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  {user.direccion}
+                  <button
+                    style={{
+                      backgroundColor: "var(--color-success)",
+                      minWidth: "80px",
+                      maxWidth: "80px",
+                      marginLeft: "10px",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    onClick={asignarDocumentacion}
+                  >
+                    ➕📄
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
